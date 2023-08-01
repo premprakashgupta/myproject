@@ -1,0 +1,46 @@
+{
+  "project_info": {
+    "project_number": "1047229691089",
+    "project_id": "doctorai-35b03",
+    "storage_bucket": "doctorai-35b03.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1047229691089:android:76c0dbc45e2d80cd4d81f0",
+        "android_client_info": {
+          "package_name": "com.example.doctor_ai"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "1047229691089-31hmrca27p9s4p0vr5tcou0b5rv092d2.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC9LiPYLwsrZbpwVkYriDnu5utuRSLlHms"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "1047229691089-31hmrca27p9s4p0vr5tcou0b5rv092d2.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "1047229691089-38m43rq0iisvdvtfimjp6c3tak0sd8e1.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.doctorAi"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -52,9 +52,9 @@ class DoctorsModel {
       hospitalName: map['hospitalName'] as String,
       specialist: map['specialist'] as String,
       tags: map['tags'] as List,
-      pin: map['pin'],
-      experience: map['experience'],
-      rating: map['rating'],
+      pin: map['pin'] as double,
+      experience: map['experience'] as double,
+      rating: map['rating'] as double,
       ref: UserModel.fromMap(map['ref']),
       state: map['state'] as String,
     );

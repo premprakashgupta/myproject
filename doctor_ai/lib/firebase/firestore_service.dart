@@ -148,20 +148,22 @@ class FirestoreService {
 
   Future<List<Map<String, dynamic>>> fetchChat(
       {required String receiverId}) async {
+    print(
+        "-----------firestore service fetchchat called----------receiverId $receiverId");
     QuerySnapshot<Map<String, dynamic>> querysnap = await _firestore
         .collection('users')
         .doc(_auth.currentUser!.uid)
         .collection('chatting')
         .where('receiver', isEqualTo: receiverId)
         .get();
-
+    print("-----------firestore service querysnap----------${querysnap.docs}");
     if (querysnap.docs.isNotEmpty) {
       var doc = querysnap.docs.first;
       List<Map<String, dynamic>> chats = (doc.data()['chats'] as List<dynamic>)
           .map((item) => item as Map<String, dynamic>)
           .toList();
 
-      print("---------------------$chats");
+      print("-----------firestore service fetchchat----------$chats");
       return chats;
     } else {
       return [];

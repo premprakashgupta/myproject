@@ -214,6 +214,20 @@ def handle_join(userId):
     socket_id = request.sid
     users[userId] = socket_id
     print(users)
+@socketio.on("disconnect")
+def handle_disconnect():
+    global users
+    disconnected_user_id = None
+    for user_id, socket_id in users.items():
+        if socket_id == request.sid:
+            disconnected_user_id = user_id
+            break
+
+    if disconnected_user_id:
+        del users[disconnected_user_id]
+        print(f"User with ID {disconnected_user_id} has disconnected.")
+        # Perform any additional cleanup or notification tasks here
+
 @socketio.on("message")
 def handle_message(data):
     senderId = data.get("senderId")
@@ -223,7 +237,7 @@ def handle_message(data):
     receiverSocketId = users.get(receiverId)
 
     if receiverSocketId:
-        emit("message", {"senderId": senderId, "message": message}, room=receiverSocketId)
+        emit("message", {"senderId": senderId,"receiverId":receiverId, "message": message}, room=receiverSocketId)
 
 @app.route('/bot_response', methods=['POST'])
 def bot_response():

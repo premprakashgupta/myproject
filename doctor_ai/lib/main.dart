@@ -1,10 +1,11 @@
 import 'dart:math';
-
+import 'package:permission_handler/permission_handler.dart';
 import 'package:doctor_ai/firebase_options.dart';
 import 'package:doctor_ai/providers/doctor_provider.dart';
 import 'package:doctor_ai/providers/user_provider.dart';
 import 'package:doctor_ai/routes/routes_screen.dart';
 import 'package:doctor_ai/providers/chatting_provider.dart';
+import 'package:doctor_ai/screens/chatting/store_msg_locally.dart';
 import 'package:doctor_ai/screens/landing_screen.dart';
 import 'package:doctor_ai/screens/authentication/signin_screen.dart';
 import 'package:doctor_ai/utility/mynotification.dart';
@@ -21,7 +22,12 @@ void main() async {
   );
 
   myNotification.initNotification();
-
+  // var status = await Permission.storage.request();
+  // if (!status.isGranted) {
+  //   // Handle the case when permission is denied
+  //   // You can show a message to the user or handle it in some other way
+  //   return;
+  // }
   runApp(
     MultiProvider(
       providers: [
@@ -37,6 +43,7 @@ void main() async {
       ],
       child: MyApp(),
     ),
+
     // MyApp(),
   );
 }
@@ -64,7 +71,7 @@ class MyApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
         useMaterial3: true,
       ),
-      // home: ChattingUserLists(),
+      // home: StoreMsgLocally(),
       initialRoute: "/",
       routes: Routes.routes,
       home: StreamBuilder<User?>(

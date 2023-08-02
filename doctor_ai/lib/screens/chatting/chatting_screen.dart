@@ -1,11 +1,12 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:doctor_ai/providers/chatting_provider.dart';
-import 'package:doctor_ai/screens/chatting/socketio.dart';
+
 import 'package:doctor_ai/screens/chatting/speech_to_text.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:socket_io_client/socket_io_client.dart' as io;
 
 class ChattingScreen extends StatefulWidget {
   const ChattingScreen({super.key});
@@ -14,37 +15,56 @@ class ChattingScreen extends StatefulWidget {
   State<ChattingScreen> createState() => _ChattingScreenState();
 }
 
-class _ChattingScreenState extends State<ChattingScreen> {
+class _ChattingScreenState extends State<ChattingScreen>
+    with WidgetsBindingObserver {
   final TextEditingController _inputController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
 
   final userId = FirebaseAuth.instance.currentUser!.uid;
 
-  // Create instances of SocketIO and SpeechToText
-
-  final SocketIO socketIO = SocketIO();
+  io.Socket? socket;
   final SpeechToText speechToText = SpeechToText();
 
   @override
   void initState() {
     super.initState();
     _initializeSpeechRecognition();
-
+    WidgetsBinding.instance.addObserver(this); // Register the observer
     // Connect to the backend server
-    var socket = socketIO.connectToServer(context, userId);
+    socket = io.io('http://localhost:5000', <String, dynamic>{
+      'transports': ['websocket'],
+    });
+    socket!.onConnect((_) {
+      print('Connected to the server');
+      socket!.emit('join', {userId});
+    });
+
+    socket!.onConnectError((data) {
+      print('Connection error: $data');
+    });
+
+    socket!.onConnectTimeout((data) {
+      print('Connection timeout: $data');
+    });
+    socket!.onDisconnect((_) {
+      print('Disconnected from the server');
+    });
     socket!.on('message', (data) {
       print('Received message from server: $data');
-      Provider.of<ChattingProvider>(context, listen: false).addChatMessage(
-        data: {'type': data['senderId'], 'message': data['message']},
-      );
-
-      SchedulerBinding.instance.addPostFrameCallback((_) {
-        _scrollController.animateTo(
-          _scrollController.position.maxScrollExtent,
-          duration: const Duration(milliseconds: 1),
-          curve: Curves.fastOutSlowIn,
+      if (mounted) {
+        Provider.of<ChattingProvider>(context, listen: false).addChatMessage(
+          data: {'type': data['senderId'], 'message': data['message']},
+          receiverId: data['senderId'],
         );
-      });
+
+        SchedulerBinding.instance.addPostFrameCallback((_) {
+          _scrollController.animateTo(
+            _scrollController.position.maxScrollExtent,
+            duration: const Duration(milliseconds: 1),
+            curve: Curves.fastOutSlowIn,
+          );
+        });
+      }
     });
   }
 
@@ -62,13 +82,18 @@ class _ChattingScreenState extends State<ChattingScreen> {
 
   void _sendMessage({required String receiverId}) {
     String message = _inputController.text;
-    socketIO.sendMessage(userId, receiverId, {'content': message, 'image': ''});
 
+    socket!.emit('message', {
+      'senderId': userId,
+      'receiverId': receiverId,
+      'message': {'content': message, 'image': ''},
+    });
     Provider.of<ChattingProvider>(context, listen: false).addChatMessage(
       data: {
         'type': userId,
-        'message': {'content': message, 'image': ''}
+        'message': {'content': message, 'image': ""}
       },
+      receiverId: receiverId,
     );
     SchedulerBinding.instance.addPostFrameCallback((_) {
       _scrollController.animateTo(
@@ -89,6 +114,25 @@ class _ChattingScreenState extends State<ChattingScreen> {
     // Fetch chats here instead of in initState
     Provider.of<ChattingProvider>(context, listen: false)
         .fetchChatsPF(receiverId: arguments["receiverId"]);
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.paused) {
+      socket?.disconnect();
+      print('Disconnected from the server');
+    }
+    super.didChangeAppLifecycleState(state);
+  }
+
+  @override
+  void dispose() {
+    // TODO: implement dispose
+
+    WidgetsBinding.instance.removeObserver(this);
+    _scrollController.dispose();
+    _inputController.dispose();
+    super.dispose();
   }
 
   @override

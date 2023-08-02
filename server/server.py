@@ -1,4 +1,5 @@
 import json
+import threading
 import redis
 from flask_socketio import SocketIO, emit
 from flask_cors import CORS
@@ -243,8 +244,9 @@ def handle_join(userId):
 
     if users[userId]:
         # Retrieve and process pending messages for the connected user
-        message_queue = redis_client.lrange(message_queue_key, 0, -1)
-        
+        user_message_queue_key = f'message_queue_{userId}'
+        message_queue = redis_client.lrange(user_message_queue_key, 0, -1)
+
         if message_queue:
             for message_json in message_queue:
                 try:
@@ -255,13 +257,13 @@ def handle_join(userId):
                     print(message_data)
 
                     if receiverId == userId:
-                        emit("message", {"senderId": senderId, "receiverId": receiverId, "message": message}, room=socket_id)
+                        emit("message", {"senderId": senderId, "receiverId": receiverId, "message": message},
+                             room=socket_id)
+                        # Remove processed message from the user's Redis queue
+                        redis_client.lrem(user_message_queue_key, 0, message_json)
 
                 except json.decoder.JSONDecodeError:
                     print("Failed to decode JSON data:", message_json)
-
-            # Remove processed messages from the Redis queue
-            redis_client.ltrim(message_queue_key, len(message_queue), -1)
 
 @socketio.on("message")
 def handle_message(data):
@@ -278,11 +280,9 @@ def handle_message(data):
         print(f"Receiver {receiverId} is offline. Adding message to Redis queue.")
         # If the receiver is offline, add the message to the Redis message queue
         message_json = json.dumps(data)  # Convert the message to JSON string
-        redis_client.rpush(message_queue_key, message_json)
-        # v=redis_client.lrange(message_queue_key, 0, -1)
-        # message_data = json.loads(v[0]) 
-        # print(message_data)
-      
+        user_message_queue_key = f'message_queue_{receiverId}'
+        redis_client.rpush(user_message_queue_key, message_json)
+
 
 @app.route('/bot_response', methods=['POST'])
 def bot_response():
@@ -360,11 +360,20 @@ def bot_response():
             # print(i+1,")",j)
         
         return jsonify({"response":{'content':response,'image':image_list[present_disease[0]]}})
+    
+def save_redis_snapshot():
+    # Save the snapshot every 60 seconds (you can adjust this interval based on your needs)
+    redis_client.save()
+    # Schedule the next snapshot
+    threading.Timer(60, save_redis_snapshot).start()
 if __name__ == '__main__':
     try:
         redis_client = redis.StrictRedis(host='localhost', port=6379, db=0)
         response = redis_client.ping()
         print("Redis is running on port 6379:", response)
+        # Start the timer for snapshotting
+        # save_redis_snapshot()
     except redis.exceptions.ConnectionError:
         print("Redis is not running on port 6379")
-    socketio.run(app, debug=True)
+    # socketio.run(app, debug=True)
+    socketio.run(app, host="0.0.0.0",port=5000,debug=True)

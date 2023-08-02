@@ -31,7 +31,7 @@ class _ChattingScreenState extends State<ChattingScreen>
     _initializeSpeechRecognition();
     WidgetsBinding.instance.addObserver(this); // Register the observer
     // Connect to the backend server
-    socket = io.io('http://localhost:5000', <String, dynamic>{
+    socket = io.io('http://192.168.152.3:5000', <String, dynamic>{
       'transports': ['websocket'],
     });
     socket!.onConnect((_) {
@@ -111,6 +111,7 @@ class _ChattingScreenState extends State<ChattingScreen>
     super.didChangeDependencies();
     final Map<String, dynamic> arguments =
         ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>;
+    Provider.of<ChattingProvider>(context, listen: false).clearChatMessages();
     // Fetch chats here instead of in initState
     Provider.of<ChattingProvider>(context, listen: false)
         .fetchChatsPF(receiverId: arguments["receiverId"]);
@@ -118,12 +119,20 @@ class _ChattingScreenState extends State<ChattingScreen>
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
+    print("didChangeAppLifecycleState");
     if (state == AppLifecycleState.resumed) {
       // Reconnect to the backend server when the app becomes active
       socket?.connect();
       socket?.emit('join', {userId});
-      print('Connected to the server');
+      print('connect and user join');
     }
+    if (state == AppLifecycleState.detached) {
+      print("detach");
+    }
+    if (state == AppLifecycleState.inactive) {
+      print("inactive");
+    }
+
     super.didChangeAppLifecycleState(state);
   }
 

@@ -43,8 +43,6 @@ class MsgStore {
 
     // Write the updated data to the file
     await file.writeAsString(encryptedUpdatedData, flush: true);
-
-    print('${myFlutterFolder.path}/receiver_${receiverId}_chats.dat');
   }
 
   Future<List<Map<String, dynamic>>> loadChatsForReceiver(
@@ -53,16 +51,14 @@ class MsgStore {
     final myFlutterFolder = Directory('${folder!.path}/myflutter');
     final file =
         File('${myFlutterFolder.path}/receiver_${receiverId}_chats.dat');
-    print(
-        'file search at ${myFlutterFolder.path}/receiver_${receiverId}_chats.dat');
-    print("------------------ file $file");
+
     if (!await file.exists()) {
       return [];
     }
     final encryptedData = await file.readAsString();
-    print('Encrypted Data: $encryptedData');
+
     final decryptedData = _decryptAndDeserialize(encryptedData);
-    print('Decrypted Data: $decryptedData');
+
     return decryptedData;
   }
 

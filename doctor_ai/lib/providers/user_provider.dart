@@ -15,7 +15,7 @@ class UserProvider with ChangeNotifier {
   Future<void> userDataProvider() async {
     var res = await FirestoreService().getUserData();
     _user = UserModel.fromMap(res!);
-    print("----------- user provider --------- $_user");
+
     notifyListeners();
   }
 }

@@ -26,7 +26,7 @@ class DoctorListScreen extends StatelessWidget {
             itemCount: doctorsList.length,
             itemBuilder: (context, index) {
               DoctorsModel doctorData = doctorsList[index];
-              print("doctor list $doctorData");
+
               return _buildDoctorCard(doctorData, context);
             },
           );

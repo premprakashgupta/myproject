@@ -46,7 +46,6 @@ class FirestoreService {
       // Merge user and doctor data
       Map<String, dynamic> mergedData = {...doctorData, 'ref': userData};
 
-      print("- doctor profile $mergedData");
       return mergedData;
     } catch (e) {
       // Handle any errors that occur during the fetch process
@@ -74,14 +73,14 @@ class FirestoreService {
         DocumentReference? userRef = doctorData['ref'] as DocumentReference?;
         if (userRef == null) {
           // Handle the case when 'ref' is null or not found in the document
-          print('User reference not found for doctor: ${doctorData['id']}');
+
           continue; // Skip this doctor and proceed to the next one
         }
 
         DocumentSnapshot userSnapshot = await userRef.get();
         if (!userSnapshot.exists) {
           // Handle the case when the user document doesn't exist
-          print('User document not found for doctor: ${doctorData['id']}');
+
           continue; // Skip this doctor and proceed to the next one
         }
 
@@ -89,7 +88,7 @@ class FirestoreService {
         Map<String, dynamic> userData =
             userSnapshot.data() as Map<String, dynamic>;
         Map<String, dynamic> mergedData = {...doctorData, 'ref': userData};
-        print("65-------------$mergedData");
+
         // Create a new DoctorsModel instance using the merged data
 
         mergedDataList.add(mergedData);
@@ -97,7 +96,6 @@ class FirestoreService {
 
       // Return the mergedDataList as the result of the Future
 
-      print("----- firestore service fetch doctor data --- $mergedDataList");
       return mergedDataList;
     } catch (e) {
       // Handle any errors that occur during the fetch process
@@ -148,22 +146,19 @@ class FirestoreService {
 
   Future<List<Map<String, dynamic>>> fetchChat(
       {required String receiverId}) async {
-    print(
-        "-----------firestore service fetchchat called----------receiverId $receiverId");
     QuerySnapshot<Map<String, dynamic>> querysnap = await _firestore
         .collection('users')
         .doc(_auth.currentUser!.uid)
         .collection('chatting')
         .where('receiver', isEqualTo: receiverId)
         .get();
-    print("-----------firestore service querysnap----------${querysnap.docs}");
+
     if (querysnap.docs.isNotEmpty) {
       var doc = querysnap.docs.first;
       List<Map<String, dynamic>> chats = (doc.data()['chats'] as List<dynamic>)
           .map((item) => item as Map<String, dynamic>)
           .toList();
 
-      print("-----------firestore service fetchchat----------$chats");
       return chats;
     } else {
       return [];

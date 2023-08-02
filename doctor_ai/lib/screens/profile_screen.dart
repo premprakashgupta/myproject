@@ -25,7 +25,7 @@ class ProfileScreen extends StatelessWidget {
             const SizedBox(height: 20.0),
             Consumer<UserProvider>(builder: (context, userProvider, _) {
               final user = userProvider.user;
-              print("profile ------------------$user");
+
               if (user == null) {
                 // Fetch and set user data if not available
                 userProvider.userDataProvider();

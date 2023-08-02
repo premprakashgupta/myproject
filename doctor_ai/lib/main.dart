@@ -22,12 +22,12 @@ void main() async {
   );
 
   myNotification.initNotification();
-  // var status = await Permission.storage.request();
-  // if (!status.isGranted) {
-  //   // Handle the case when permission is denied
-  //   // You can show a message to the user or handle it in some other way
-  //   return;
-  // }
+  var status = await Permission.storage.request();
+  if (!status.isGranted) {
+    // Handle the case when permission is denied
+    // You can show a message to the user or handle it in some other way
+    return;
+  }
   runApp(
     MultiProvider(
       providers: [

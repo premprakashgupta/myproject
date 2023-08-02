@@ -11,13 +11,13 @@ class DoctorProvider with ChangeNotifier {
 
   Future<void> fetchDoctorList() async {
     var res = await FirestoreService().fetchDoctorData();
-    print("----- doctor provider res--- $res");
+
     if (res != null) {
       _doctorsList = res.map((map) => DoctorsModel.fromMap(map)).toList();
     } else {
       _doctorsList = [];
     }
-    print("----- doctor provider --- $_doctorsList");
+
     notifyListeners();
   }
 

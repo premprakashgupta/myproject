@@ -1,3 +1,5 @@
+import json
+import redis
 from flask_socketio import SocketIO, emit
 from flask_cors import CORS
 from flask import Flask, request, jsonify
@@ -18,6 +20,8 @@ CORS(app)
 app.config['SECRET_KEY'] = 'secret'
 socketio = SocketIO(app)
 socketio.init_app(app, cors_allowed_origins="*")
+redis_client = redis.StrictRedis(host='localhost', port=6379, db=0)
+message_queue_key = 'message_queue'
 
 # global variables 
 symptoms_exp=[]
@@ -209,11 +213,11 @@ def index():
 @socketio.on("connect")
 def handle_connect():
     print("A user connected")
-@socketio.on("join")
-def handle_join(userId):
-    socket_id = request.sid
-    users[userId] = socket_id
-    print(users)
+    # Get the user ID for the connected socket
+    
+
+
+
 @socketio.on("disconnect")
 def handle_disconnect():
     global users
@@ -227,6 +231,37 @@ def handle_disconnect():
         del users[disconnected_user_id]
         print(f"User with ID {disconnected_user_id} has disconnected.")
         # Perform any additional cleanup or notification tasks here
+import json
+
+# ... Your other code ...
+
+@socketio.on("join")
+def handle_join(userId):
+    socket_id = request.sid
+    users[userId] = socket_id
+    print(users)
+
+    if users[userId]:
+        # Retrieve and process pending messages for the connected user
+        message_queue = redis_client.lrange(message_queue_key, 0, -1)
+        
+        if message_queue:
+            for message_json in message_queue:
+                try:
+                    message_data = json.loads(message_json)  # Parse the JSON string to a Python dictionary
+                    senderId = message_data.get("senderId")
+                    receiverId = message_data.get("receiverId")
+                    message = message_data.get("message")
+                    print(message_data)
+
+                    if receiverId == userId:
+                        emit("message", {"senderId": senderId, "receiverId": receiverId, "message": message}, room=socket_id)
+
+                except json.decoder.JSONDecodeError:
+                    print("Failed to decode JSON data:", message_json)
+
+            # Remove processed messages from the Redis queue
+            redis_client.ltrim(message_queue_key, len(message_queue), -1)
 
 @socketio.on("message")
 def handle_message(data):
@@ -237,7 +272,17 @@ def handle_message(data):
     receiverSocketId = users.get(receiverId)
 
     if receiverSocketId:
-        emit("message", {"senderId": senderId,"receiverId":receiverId, "message": message}, room=receiverSocketId)
+        # If the receiver is online, send the message directly
+        emit("message", {"senderId": senderId, "receiverId": receiverId, "message": message}, room=receiverSocketId)
+    else:
+        print(f"Receiver {receiverId} is offline. Adding message to Redis queue.")
+        # If the receiver is offline, add the message to the Redis message queue
+        message_json = json.dumps(data)  # Convert the message to JSON string
+        redis_client.rpush(message_queue_key, message_json)
+        # v=redis_client.lrange(message_queue_key, 0, -1)
+        # message_data = json.loads(v[0]) 
+        # print(message_data)
+      
 
 @app.route('/bot_response', methods=['POST'])
 def bot_response():
@@ -315,13 +360,11 @@ def bot_response():
             # print(i+1,")",j)
         
         return jsonify({"response":{'content':response,'image':image_list[present_disease[0]]}})
-
-          
-
-
-        
-
-    
-
 if __name__ == '__main__':
+    try:
+        redis_client = redis.StrictRedis(host='localhost', port=6379, db=0)
+        response = redis_client.ping()
+        print("Redis is running on port 6379:", response)
+    except redis.exceptions.ConnectionError:
+        print("Redis is not running on port 6379")
     socketio.run(app, debug=True)

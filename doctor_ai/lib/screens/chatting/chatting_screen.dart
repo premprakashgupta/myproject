@@ -118,9 +118,11 @@ class _ChattingScreenState extends State<ChattingScreen>
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.paused) {
-      socket?.disconnect();
-      print('Disconnected from the server');
+    if (state == AppLifecycleState.resumed) {
+      // Reconnect to the backend server when the app becomes active
+      socket?.connect();
+      socket?.emit('join', {userId});
+      print('Connected to the server');
     }
     super.didChangeAppLifecycleState(state);
   }

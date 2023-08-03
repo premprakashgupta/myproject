@@ -12,7 +12,8 @@ class ChattingProvider with ChangeNotifier {
   void addChatMessage(
       {required Map<String, dynamic> data, required String receiverId}) {
     _chatMessages.add(data);
-    MsgStore().storeChatMessageLocally(data, receiverId);
+    // MsgStore().storeChatMessageLocally(data, receiverId);
+    print(_chatMessages);
     notifyListeners();
   }
 
@@ -22,9 +23,9 @@ class ChattingProvider with ChangeNotifier {
   }
 
   Future<void> fetchChatsPF({required String receiverId}) async {
-    var res =
-        await MsgStore().loadChatsForReceiver(receiverId); // from local file
-    // var res = await FirestoreService().fetchChat(receiverId: receiverId);
+    // var res =
+    // await MsgStore().loadChatsForReceiver(receiverId); // from local file
+    var res = await FirestoreService().fetchChat(receiverId: receiverId);
     // Combine new Firestore data with existing chat messages
     if (res.isNotEmpty) {
       _chatMessages.insertAll(0, res);

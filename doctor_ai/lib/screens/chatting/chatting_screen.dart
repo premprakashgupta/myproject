@@ -2,6 +2,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:doctor_ai/providers/chatting_provider.dart';
 
 import 'package:doctor_ai/screens/chatting/speech_to_text.dart';
+import 'package:doctor_ai/utility/custom_snacbar.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter/material.dart';
@@ -15,8 +16,7 @@ class ChattingScreen extends StatefulWidget {
   State<ChattingScreen> createState() => _ChattingScreenState();
 }
 
-class _ChattingScreenState extends State<ChattingScreen>
-    with WidgetsBindingObserver {
+class _ChattingScreenState extends State<ChattingScreen> {
   final TextEditingController _inputController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
 
@@ -29,31 +29,31 @@ class _ChattingScreenState extends State<ChattingScreen>
   void initState() {
     super.initState();
     _initializeSpeechRecognition();
-    WidgetsBinding.instance.addObserver(this); // Register the observer
+
     // Connect to the backend server
     socket = io.io('http://192.168.152.3:5000', <String, dynamic>{
       'transports': ['websocket'],
     });
     socket!.onConnect((_) {
-      print('Connected to the server');
+      CustomSnackbar.customSnackbar(context, 'Connected to the server');
       socket!.emit('join', {userId});
     });
 
-    socket!.onConnectError((data) {
-      print('Connection error: $data');
-    });
+    socket!.onConnectError((data) =>
+        CustomSnackbar.customSnackbar(context, 'Error,Start Socket Server'));
 
-    socket!.onConnectTimeout((data) {
-      print('Connection timeout: $data');
-    });
-    socket!.onDisconnect((_) {
-      print('Disconnected from the server');
-    });
+    socket!.onConnectTimeout((data) => CustomSnackbar.customSnackbar(
+        context, 'Timeout, Restart Socket server'));
+    socket!.onDisconnect((_) =>
+        CustomSnackbar.customSnackbar(context, 'Disconnected to the server'));
     socket!.on('message', (data) {
-      print('Received message from server: $data');
       if (mounted) {
         Provider.of<ChattingProvider>(context, listen: false).addChatMessage(
-          data: {'type': data['senderId'], 'message': data['message']},
+          data: {
+            'sender': data['senderId'],
+            'receiver': data['receiverId'],
+            'message': data['message']
+          },
           receiverId: data['senderId'],
         );
 
@@ -74,8 +74,6 @@ class _ChattingScreenState extends State<ChattingScreen>
 
   void _startListening() {
     speechToText.startListening((String recognizedText) {
-      // setState(() {
-      // });
       _inputController.text = recognizedText;
     });
   }
@@ -90,7 +88,8 @@ class _ChattingScreenState extends State<ChattingScreen>
     });
     Provider.of<ChattingProvider>(context, listen: false).addChatMessage(
       data: {
-        'type': userId,
+        'sender': userId,
+        'receiver': receiverId,
         'message': {'content': message, 'image': ""}
       },
       receiverId: receiverId,
@@ -118,29 +117,9 @@ class _ChattingScreenState extends State<ChattingScreen>
   }
 
   @override
-  void didChangeAppLifecycleState(AppLifecycleState state) {
-    print("didChangeAppLifecycleState");
-    if (state == AppLifecycleState.resumed) {
-      // Reconnect to the backend server when the app becomes active
-      socket?.connect();
-      socket?.emit('join', {userId});
-      print('connect and user join');
-    }
-    if (state == AppLifecycleState.detached) {
-      print("detach");
-    }
-    if (state == AppLifecycleState.inactive) {
-      print("inactive");
-    }
-
-    super.didChangeAppLifecycleState(state);
-  }
-
-  @override
   void dispose() {
-    // TODO: implement dispose
+    print("------- dispose");
 
-    WidgetsBinding.instance.removeObserver(this);
     _scrollController.dispose();
     _inputController.dispose();
     super.dispose();
@@ -148,7 +127,6 @@ class _ChattingScreenState extends State<ChattingScreen>
 
   @override
   Widget build(BuildContext context) {
-    print("build called");
     final Map<String, dynamic> arguments =
         ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>;
 
@@ -163,15 +141,21 @@ class _ChattingScreenState extends State<ChattingScreen>
           Consumer<ChattingProvider>(
             builder: (context, value, _) {
               List<Map<String, dynamic>> chatMessages = value.chatMessages;
-              print(
-                  "-------------------------------- chatting screen $chatMessages");
+              List<Map<String, dynamic>> filteredchatMessages = chatMessages
+                  .where((message) =>
+                      message['sender'] == userId &&
+                          message['receiver'] == arguments['receiverId'] ||
+                      message['sender'] == arguments['receiverId'] &&
+                          message['receiver'] == userId)
+                  .toList();
+
               return Expanded(
                 child: ListView.builder(
-                  itemCount: chatMessages.length,
+                  itemCount: filteredchatMessages.length,
                   controller: _scrollController,
                   itemBuilder: (context, index) {
-                    var messageData = chatMessages[index];
-                    var sender = messageData['type'];
+                    var messageData = filteredchatMessages[index];
+                    var sender = messageData['sender'];
                     Map<String, dynamic> message = messageData['message'];
 
                     return Align(
@@ -292,9 +276,7 @@ class _ChattingScreenState extends State<ChattingScreen>
                       visible: speechToText.isListening,
                       replacement: ElevatedButton(
                         onPressed: () {
-                          print(speechToText.isListening);
                           _startListening;
-                          print(speechToText.isListening);
                         },
                         child: const Icon(Icons.mic),
                       ),
@@ -304,14 +286,6 @@ class _ChattingScreenState extends State<ChattingScreen>
                       ),
                     ),
                     const SizedBox(width: 20),
-                    // speechToText.isListening
-                    //     ? ElevatedButton(
-                    //         onPressed: speechToText.isListening
-                    //             ? speechToText.stopListening
-                    //             : null,
-                    //         child: const Text('Stop'),
-                    //       )
-                    //     : const SizedBox(),
                   ],
                 ),
               ],

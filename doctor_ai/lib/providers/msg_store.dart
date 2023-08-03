@@ -4,7 +4,7 @@ import 'package:encrypt/encrypt.dart' as encrypt;
 import 'package:path_provider/path_provider.dart';
 
 class MsgStore {
-  String _serializeAndEncrypt(List<Map<String, dynamic>> data) {
+  String _serializeAndEncrypt(Map<String, dynamic> data) {
     final jsonData = jsonEncode(data);
     final key = encrypt.Key.fromLength(32);
     final iv = encrypt.IV.fromLength(16);
@@ -15,55 +15,61 @@ class MsgStore {
 
   Future<void> storeChatMessageLocally(
       Map<String, dynamic> data, String receiverId) async {
-    // final encryptedData = _serializeAndEncrypt(data);
     final folder = await getExternalStorageDirectory();
     final myFlutterFolder = Directory('${folder!.path}/myflutter');
     if (!await myFlutterFolder.exists()) {
       await myFlutterFolder.create(recursive: true);
     }
 
-    final file =
-        File('${myFlutterFolder.path}/receiver_${receiverId}_chats.dat');
-    List<Map<String, dynamic>> existingData = [];
+    final file = File('${myFlutterFolder.path}/chatdb.dat');
+    Map<String, dynamic> chatData = {};
 
     if (await file.exists()) {
-      // If the file exists, load the existing data and deserialize it
       final encryptedExistingData = await file.readAsString();
       if (encryptedExistingData.isNotEmpty) {
-        // existingData = _decryptAndDeserialize(encryptedExistingData);
-        existingData = _decryptAndDeserialize(encryptedExistingData);
+        final decryptedData = _decryptAndDeserialize(encryptedExistingData);
+        if (decryptedData is Map) {
+          chatData = Map.from(decryptedData);
+        }
       }
     }
 
-    // Append the new message to the existing data list
-    existingData.add(data);
+    // Update the chat data for the receiver
+    if (!chatData.containsKey(receiverId)) {
+      chatData[receiverId] = [];
+    }
+    (chatData[receiverId] as List).add(data);
 
-    // Serialize and encrypt the updated data list
-    final encryptedUpdatedData = _serializeAndEncrypt(existingData);
+    // Serialize and encrypt the updated data
+    final encryptedUpdatedData = _serializeAndEncrypt(chatData);
 
     // Write the updated data to the file
     await file.writeAsString(encryptedUpdatedData, flush: true);
+
+    print('${myFlutterFolder.path}/chatdb.dat');
   }
 
   Future<List<Map<String, dynamic>>> loadChatsForReceiver(
       String receiverId) async {
     final folder = await getExternalStorageDirectory();
     final myFlutterFolder = Directory('${folder!.path}/myflutter');
-    final file =
-        File('${myFlutterFolder.path}/receiver_${receiverId}_chats.dat');
+    final file = File('${myFlutterFolder.path}/chatdb.dat');
 
     if (!await file.exists()) {
       return [];
     }
     final encryptedData = await file.readAsString();
-
     final decryptedData = _decryptAndDeserialize(encryptedData);
 
-    return decryptedData;
+    if (decryptedData is Map && decryptedData.containsKey(receiverId)) {
+      return List<Map<String, dynamic>>.from(decryptedData[receiverId]);
+    }
+
+    return [];
   }
 
   // Decryption and Deserialization (Example, you may use your own deserialization method)
-  List<Map<String, dynamic>> _decryptAndDeserialize(String encryptedData) {
+  Map<String, dynamic> _decryptAndDeserialize(String encryptedData) {
     final key = encrypt.Key.fromLength(32);
     final iv = encrypt.IV.fromLength(16);
     final encrypter = encrypt.Encrypter(encrypt.AES(key));
@@ -72,13 +78,13 @@ class MsgStore {
       final decryptedData = encrypter.decrypt64(encryptedData, iv: iv);
       final jsonData = jsonDecode(decryptedData);
 
-      if (jsonData is List) {
-        return jsonData.cast<Map<String, dynamic>>();
+      if (jsonData is Map) {
+        return jsonData as Map<String, dynamic>;
       }
     } catch (e) {
       print('Error while decrypting and deserializing: $e');
     }
 
-    return [];
+    return {};
   }
 }

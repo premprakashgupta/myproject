@@ -5,7 +5,7 @@ import 'package:doctor_ai/providers/doctor_provider.dart';
 import 'package:doctor_ai/providers/user_provider.dart';
 import 'package:doctor_ai/routes/routes_screen.dart';
 import 'package:doctor_ai/providers/chatting_provider.dart';
-import 'package:doctor_ai/screens/chatting/store_msg_locally.dart';
+
 import 'package:doctor_ai/screens/landing_screen.dart';
 import 'package:doctor_ai/screens/authentication/signin_screen.dart';
 import 'package:doctor_ai/utility/mynotification.dart';
@@ -22,12 +22,12 @@ void main() async {
   );
 
   myNotification.initNotification();
-  var status = await Permission.storage.request();
-  if (!status.isGranted) {
-    // Handle the case when permission is denied
-    // You can show a message to the user or handle it in some other way
-    return;
-  }
+  // var status = await Permission.storage.request();
+  // if (!status.isGranted) {
+  //   // Handle the case when permission is denied
+  //   // You can show a message to the user or handle it in some other way
+  //   return;
+  // }
   runApp(
     MultiProvider(
       providers: [

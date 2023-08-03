@@ -232,15 +232,15 @@ def handle_disconnect():
         del users[disconnected_user_id]
         print(f"User with ID {disconnected_user_id} has disconnected.")
         # Perform any additional cleanup or notification tasks here
-import json
 
-# ... Your other code ...
 
 @socketio.on("join")
 def handle_join(userId):
     socket_id = request.sid
-    users[userId] = socket_id
-    print(users)
+    if userId not in users:
+        # Add the user to the users dictionary if it's the first connection
+        users[userId] = socket_id
+        print(users)
 
     if users[userId]:
         # Retrieve and process pending messages for the connected user

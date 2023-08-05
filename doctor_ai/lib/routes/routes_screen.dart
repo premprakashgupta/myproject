@@ -1,5 +1,7 @@
 import 'package:doctor_ai/screens/authentication/signup_screen.dart';
 import 'package:doctor_ai/screens/chatting/chatting_screen.dart';
+import 'package:doctor_ai/screens/chatting/chatting_user_list.dart';
+import 'package:doctor_ai/screens/doctor_list.dart';
 import 'package:doctor_ai/screens/doctor_profile.dart';
 import 'package:doctor_ai/screens/profile_screen.dart';
 import 'package:flutter/material.dart';
@@ -10,6 +12,8 @@ class Routes {
     '/doctors-chatting': (context) => const ChattingScreen(),
     '/notification': (context) => const ProfileScreen(),
     '/doctor-profile': (context) => const DoctorProfile(),
+    '/doctor-list': (context) => const DoctorListScreen(),
     '/signup': (context) => const SignupScreen(),
+    '/receiver-list': (context) => const ChattingUserLists(),
   };
 }

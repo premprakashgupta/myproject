@@ -1,4 +1,5 @@
 import 'dart:math';
+import 'package:doctor_ai/providers/socketio_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:doctor_ai/firebase_options.dart';
 import 'package:doctor_ai/providers/doctor_provider.dart';
@@ -39,6 +40,9 @@ void main() async {
         ),
         ChangeNotifierProvider(
           create: (_) => ChattingProvider(),
+        ),
+        ChangeNotifierProvider(
+          create: (_) => SocketProvider(),
         ),
       ],
       child: MyApp(),
@@ -84,8 +88,8 @@ class MyApp extends StatelessWidget {
             } else {
               // Update the UserProvider with the user data
               // final userProvider =
-              //     Provider.of<UserProvider>(context, listen: false);
-              // var res = userProvider.userDataProvider();
+              Provider.of<SocketProvider>(context, listen: false)
+                  .connect(context);
 
               // if (res != null) {
               return const LandingScreen();

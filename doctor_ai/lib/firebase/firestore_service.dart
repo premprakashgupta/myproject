@@ -6,12 +6,13 @@ import 'package:firebase_auth/firebase_auth.dart';
 class FirestoreService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final FirebaseAuth _auth = FirebaseAuth.instance;
-  Future<Map<String, dynamic>?> getUserData() async {
+  Future<Map<String, dynamic>?> getUserData({String? userUid}) async {
+    // Check if the userUid is provided, otherwise use the currently authenticated user's UID
+    String uidToFetch = userUid ?? _auth.currentUser!.uid;
     try {
       final CollectionReference usersCollection =
           _firestore.collection('users');
-      final userDataSnapshot =
-          await usersCollection.doc(_auth.currentUser!.uid).get();
+      final userDataSnapshot = await usersCollection.doc(uidToFetch).get();
 
       if (userDataSnapshot.exists) {
         final userData = userDataSnapshot.data();

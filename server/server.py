@@ -214,6 +214,7 @@ def index():
 @socketio.on("connect")
 def handle_connect():
     print("A user connected")
+    print(users)
     # Get the user ID for the connected socket
     
 
@@ -242,28 +243,28 @@ def handle_join(userId):
         users[userId] = socket_id
         print(users)
 
-    if users[userId]:
-        # Retrieve and process pending messages for the connected user
-        user_message_queue_key = f'message_queue_{userId}'
-        message_queue = redis_client.lrange(user_message_queue_key, 0, -1)
+    # if users[userId]:
+    #     # Retrieve and process pending messages for the connected user
+    #     user_message_queue_key = f'message_queue_{userId}'
+    #     message_queue = redis_client.lrange(user_message_queue_key, 0, -1)
 
-        if message_queue:
-            for message_json in message_queue:
-                try:
-                    message_data = json.loads(message_json)  # Parse the JSON string to a Python dictionary
-                    senderId = message_data.get("senderId")
-                    receiverId = message_data.get("receiverId")
-                    message = message_data.get("message")
-                    print(message_data)
+    #     if message_queue:
+    #         for message_json in message_queue:
+    #             try:
+    #                 message_data = json.loads(message_json)  # Parse the JSON string to a Python dictionary
+    #                 senderId = message_data.get("senderId")
+    #                 receiverId = message_data.get("receiverId")
+    #                 message = message_data.get("message")
+    #                 print(message_data)
 
-                    if receiverId == userId:
-                        emit("message", {"senderId": senderId, "receiverId": receiverId, "message": message},
-                             room=socket_id)
-                        # Remove processed message from the user's Redis queue
-                        redis_client.lrem(user_message_queue_key, 0, message_json)
+    #                 if receiverId == userId:
+    #                     emit("message", {"senderId": senderId, "receiverId": receiverId, "message": message},
+    #                          room=socket_id)
+    #                     # Remove processed message from the user's Redis queue
+    #                     redis_client.lrem(user_message_queue_key, 0, message_json)
 
-                except json.decoder.JSONDecodeError:
-                    print("Failed to decode JSON data:", message_json)
+    #             except json.decoder.JSONDecodeError:
+    #                 print("Failed to decode JSON data:", message_json)
 
 @socketio.on("message")
 def handle_message(data):
@@ -279,9 +280,9 @@ def handle_message(data):
     else:
         print(f"Receiver {receiverId} is offline. Adding message to Redis queue.")
         # If the receiver is offline, add the message to the Redis message queue
-        message_json = json.dumps(data)  # Convert the message to JSON string
-        user_message_queue_key = f'message_queue_{receiverId}'
-        redis_client.rpush(user_message_queue_key, message_json)
+        # message_json = json.dumps(data)  # Convert the message to JSON string
+        # user_message_queue_key = f'message_queue_{receiverId}'
+        # redis_client.rpush(user_message_queue_key, message_json)
 
 
 @app.route('/bot_response', methods=['POST'])
@@ -367,13 +368,13 @@ def save_redis_snapshot():
     # Schedule the next snapshot
     threading.Timer(60, save_redis_snapshot).start()
 if __name__ == '__main__':
-    try:
-        redis_client = redis.StrictRedis(host='localhost', port=6379, db=0)
-        response = redis_client.ping()
-        print("Redis is running on port 6379:", response)
-        # Start the timer for snapshotting
-        # save_redis_snapshot()
-    except redis.exceptions.ConnectionError:
-        print("Redis is not running on port 6379")
+    # try:
+    #     redis_client = redis.StrictRedis(host='localhost', port=6379, db=0)
+    #     response = redis_client.ping()
+    #     print("Redis is running on port 6379:", response)
+    #     # Start the timer for snapshotting
+    #     # save_redis_snapshot()
+    # except redis.exceptions.ConnectionError:
+    #     print("Redis is not running on port 6379")
     # socketio.run(app, debug=True)
     socketio.run(app, host="0.0.0.0",port=5000,debug=True)

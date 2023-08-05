@@ -1,10 +1,25 @@
+import 'package:doctor_ai/providers/chatting_provider.dart';
 import 'package:doctor_ai/providers/doctor_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:doctor_ai/models/doctors_model.dart';
 
-class DoctorListScreen extends StatelessWidget {
+class DoctorListScreen extends StatefulWidget {
   const DoctorListScreen({Key? key}) : super(key: key);
+
+  @override
+  State<DoctorListScreen> createState() => _DoctorListScreenState();
+}
+
+class _DoctorListScreenState extends State<DoctorListScreen> {
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+
+    // Provider.of<ChattingProvider>(context, listen: false).clearChatMessages();
+    // Fetch chats here instead of in initState
+    Provider.of<ChattingProvider>(context, listen: false).fetchChatsPF();
+  }
 
   @override
   Widget build(BuildContext context) {

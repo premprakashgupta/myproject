@@ -1,5 +1,6 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:doctor_ai/providers/chatting_provider.dart';
+import 'package:doctor_ai/providers/socketio_provider.dart';
 
 import 'package:doctor_ai/screens/chatting/speech_to_text.dart';
 import 'package:doctor_ai/utility/custom_snacbar.dart';
@@ -29,43 +30,7 @@ class _ChattingScreenState extends State<ChattingScreen> {
   void initState() {
     super.initState();
     _initializeSpeechRecognition();
-
-    // Connect to the backend server
-    socket = io.io('http://192.168.152.3:5000', <String, dynamic>{
-      'transports': ['websocket'],
-    });
-    socket!.onConnect((_) {
-      CustomSnackbar.customSnackbar(context, 'Connected to the server');
-      socket!.emit('join', {userId});
-    });
-
-    socket!.onConnectError((data) =>
-        CustomSnackbar.customSnackbar(context, 'Error,Start Socket Server'));
-
-    socket!.onConnectTimeout((data) => CustomSnackbar.customSnackbar(
-        context, 'Timeout, Restart Socket server'));
-    socket!.onDisconnect((_) =>
-        CustomSnackbar.customSnackbar(context, 'Disconnected to the server'));
-    socket!.on('message', (data) {
-      if (mounted) {
-        Provider.of<ChattingProvider>(context, listen: false).addChatMessage(
-          data: {
-            'sender': data['senderId'],
-            'receiver': data['receiverId'],
-            'message': data['message']
-          },
-          receiverId: data['senderId'],
-        );
-
-        SchedulerBinding.instance.addPostFrameCallback((_) {
-          _scrollController.animateTo(
-            _scrollController.position.maxScrollExtent,
-            duration: const Duration(milliseconds: 1),
-            curve: Curves.fastOutSlowIn,
-          );
-        });
-      }
-    });
+    socket = Provider.of<SocketProvider>(context, listen: false).socket;
   }
 
   void _initializeSpeechRecognition() async {
@@ -77,6 +42,12 @@ class _ChattingScreenState extends State<ChattingScreen> {
       _inputController.text = recognizedText;
     });
   }
+
+  // @override
+  // void didChangeDependencies() {
+
+  //   super.didChangeDependencies();
+  // }
 
   void _sendMessage({required String receiverId}) {
     String message = _inputController.text;
@@ -106,17 +77,6 @@ class _ChattingScreenState extends State<ChattingScreen> {
   }
 
   @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    final Map<String, dynamic> arguments =
-        ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>;
-    Provider.of<ChattingProvider>(context, listen: false).clearChatMessages();
-    // Fetch chats here instead of in initState
-    Provider.of<ChattingProvider>(context, listen: false)
-        .fetchChatsPF(receiverId: arguments["receiverId"]);
-  }
-
-  @override
   void dispose() {
     print("------- dispose");
 
@@ -139,22 +99,42 @@ class _ChattingScreenState extends State<ChattingScreen> {
           Text("me : $userId"),
           Text("receiverId : ${arguments['receiverId']}"),
           Consumer<ChattingProvider>(
-            builder: (context, value, _) {
-              List<Map<String, dynamic>> chatMessages = value.chatMessages;
-              List<Map<String, dynamic>> filteredchatMessages = chatMessages
-                  .where((message) =>
-                      message['sender'] == userId &&
-                          message['receiver'] == arguments['receiverId'] ||
-                      message['sender'] == arguments['receiverId'] &&
-                          message['receiver'] == userId)
-                  .toList();
+            builder: (context, chattingProvider, _) {
+              List<Map<String, dynamic>> chatMessages =
+                  chattingProvider.chatMessages;
+              if (chatMessages.isEmpty) {
+                return Expanded(
+                  child: Text("No data found chat is empty"),
+                );
+              }
+
+              // Find the chat data for the current receiverId
+              late Map<String, dynamic>? chatData;
+              for (var element in chatMessages) {
+                if (element['profileData']['id'].toString() ==
+                    arguments["receiverId"]) {
+                  chatData = element;
+                }
+              }
+
+              print(chatData);
+              // return SizedBox();
+              print("consumer run");
+
+              if (chatData!.isEmpty) {
+                return Expanded(
+                  child: Text("No chat data found chat data empty"),
+                );
+              }
+
+              List<dynamic> chats = chatData['chats'];
 
               return Expanded(
                 child: ListView.builder(
-                  itemCount: filteredchatMessages.length,
+                  itemCount: chats.length,
                   controller: _scrollController,
                   itemBuilder: (context, index) {
-                    var messageData = filteredchatMessages[index];
+                    var messageData = chats[index];
                     var sender = messageData['sender'];
                     Map<String, dynamic> message = messageData['message'];
 

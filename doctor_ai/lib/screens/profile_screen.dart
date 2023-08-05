@@ -2,9 +2,15 @@ import 'package:doctor_ai/providers/user_provider.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({Key? key}) : super(key: key);
+
+  void clearSharedP() async {
+    SharedPreferences _share = await SharedPreferences.getInstance();
+    _share.clear();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -52,6 +58,12 @@ class ProfileScreen extends StatelessWidget {
             ElevatedButton(
               onPressed: () {
                 _showLogoutConfirmationDialog(context);
+              },
+              child: const Text("Logout"),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                clearSharedP();
               },
               child: const Text("Logout"),
             ),

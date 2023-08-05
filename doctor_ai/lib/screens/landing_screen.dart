@@ -20,16 +20,8 @@ class _LandingScreenState extends State<LandingScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final user = Provider.of<UserProvider>(context).user;
     final List<Widget> screens = [
       const HomeScreen(),
-      if (user != null && user.role == 'doctor')
-        const ChattingUserLists()
-      else if (user != null && user.role == 'patient')
-        const DoctorListScreen()
-      else
-        Container(),
-      // const ChattingUserLists(),
       const NotificationScreen(),
       const ProfileScreen(),
     ];
@@ -53,12 +45,6 @@ class _LandingScreenState extends State<LandingScreen> {
               HeroIcons.home,
             ),
             label: 'Home',
-          ),
-          BottomNavigationBarItem(
-            icon: HeroIcon(
-              HeroIcons.userGroup,
-            ),
-            label: 'Connect',
           ),
           BottomNavigationBarItem(
             icon: HeroIcon(

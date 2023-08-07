@@ -45,11 +45,6 @@ class ChattingProvider with ChangeNotifier {
     notifyListeners();
   }
 
-  // Setter method to clear all chat messages
-  void clearChatMessages() {
-    _chatMessages.clear();
-  }
-
   Future<void> fetchChatsPF() async {
     var res = await MsgStore()
         .loadLocalDB(); // Load all chat messages from local file
@@ -72,5 +67,10 @@ class ChattingProvider with ChangeNotifier {
     }
 
     notifyListeners();
+  }
+
+  void clear() {
+    print("chatting clear");
+    _chatMessages.clear();
   }
 }

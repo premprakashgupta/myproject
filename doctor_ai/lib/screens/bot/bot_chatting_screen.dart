@@ -42,7 +42,7 @@ class _BotChattingScreenState extends State<BotChattingScreen> {
   }
 
   Future<Map<String, dynamic>> fetchBotResponse(String message) async {
-    var url = Uri.parse("http://10.0.2.2:5000/bot_response");
+    var url = Uri.parse("http://192.168.152.3:5000/bot_response");
     //web:      http: //localhost:5000
     // android: http://10.0.2.2:5000
     var headers = {"Content-Type": "application/json"};

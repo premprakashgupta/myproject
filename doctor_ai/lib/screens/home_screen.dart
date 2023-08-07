@@ -1,7 +1,8 @@
 import 'package:doctor_ai/models/user_model.dart';
+import 'package:doctor_ai/providers/socketio_provider.dart';
 import 'package:doctor_ai/providers/user_provider.dart';
 import 'package:doctor_ai/screens/bot/bot_chatting_screen.dart';
-
+import 'package:socket_io_client/socket_io_client.dart' as io;
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
@@ -18,13 +19,6 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   late UserModel? user;
-
-  @override
-  void initState() {
-    // TODO: implement initState
-
-    super.initState();
-  }
 
   @override
   void didChangeDependencies() {

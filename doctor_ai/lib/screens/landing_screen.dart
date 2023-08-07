@@ -1,3 +1,4 @@
+import 'package:doctor_ai/providers/socketio_provider.dart';
 import 'package:doctor_ai/providers/user_provider.dart';
 import 'package:doctor_ai/screens/chatting/chatting_user_list.dart';
 import 'package:doctor_ai/screens/doctor_list.dart';

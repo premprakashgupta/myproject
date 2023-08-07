@@ -1,58 +1,95 @@
 import 'dart:convert';
+import 'dart:io';
+import 'package:encrypt/encrypt.dart' as encrypt;
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:path_provider/path_provider.dart';
 
 class MsgStore {
-  final userId = FirebaseAuth.instance.currentUser!.uid;
-  Future<void> storeChatMessageLocally(
-      Map<String, dynamic> data, String receiverId) async {
-    final prefs = await SharedPreferences.getInstance();
+  String userId = FirebaseAuth.instance.currentUser!.uid;
+  String _serializeAndEncrypt(List<Map<String, dynamic>> data) {
+    final jsonData = jsonEncode(data);
+    final key = encrypt.Key.fromLength(32);
+    final iv = encrypt.IV.fromLength(16);
+    final encrypter = encrypt.Encrypter(encrypt.AES(key));
+    final encrypted = encrypter.encrypt(jsonData, iv: iv);
+    return encrypted.base64;
+  }
 
-    List<Map<String, dynamic>> chatData = [];
+  List<Map<String, dynamic>> _decryptAndDeserialize(String encryptedData) {
+    final key = encrypt.Key.fromLength(32);
+    final iv = encrypt.IV.fromLength(16);
+    final encrypter = encrypt.Encrypter(encrypt.AES(key));
 
-    final existingDataString = prefs.getString(userId) ??
-        '[]'; // Initialize with an empty array if no data is found
-    if (existingDataString.isNotEmpty) {
-      chatData = jsonDecode(existingDataString).cast<Map<String, dynamic>>();
+    try {
+      final decryptedData = encrypter.decrypt64(encryptedData, iv: iv);
+      final jsonData = jsonDecode(decryptedData);
+
+      if (jsonData is List) {
+        return List<Map<String, dynamic>>.from(jsonData);
+      }
+    } catch (e) {
+      print('Error while decrypting and deserializing: $e');
     }
 
-    // Search for the profileData in the chatData list
+    return [];
+  }
+
+  Future<void> storeChatMessageLocally(
+      Map<String, dynamic> data, String receiverId) async {
+    final folder = await getExternalStorageDirectory();
+    final myFlutterFolder = Directory('${folder!.path}/myflutter');
+    if (!await myFlutterFolder.exists()) {
+      await myFlutterFolder.create(recursive: true);
+    }
+
+    final file = File('${myFlutterFolder.path}/${userId}_chatdb.dat');
+    List<Map<String, dynamic>> chatData = [];
+
+    if (await file.exists()) {
+      final encryptedExistingData = await file.readAsString();
+      if (encryptedExistingData.isNotEmpty) {
+        chatData = _decryptAndDeserialize(encryptedExistingData);
+      }
+    }
+
+    // Search for the receiverId in the chatData list
     bool found = false;
     for (var chat in chatData) {
-      if (chat.containsKey("profileData") &&
-          chat["profileData"] == receiverId) {
-        (chat["chats"] as List).add(data);
+      if (chat['profileData'] == receiverId) {
+        (chat['chats'] as List).add(data);
         found = true;
         break;
       }
     }
 
-    // If the profileData not found, create a new entry in the chatData list
+    // If the receiverId not found, create a new entry in the chatData list
     if (!found) {
       chatData.add({
-        "profileData": receiverId,
-        "chats": [data],
+        'profileData': receiverId,
+        'chats': [data],
       });
     }
 
-    // Serialize and update the data in SharedPreferences
-    final updatedDataString = jsonEncode(chatData);
-    prefs.setString(userId, updatedDataString);
+    // Serialize and encrypt the updated data
+    final encryptedUpdatedData = _serializeAndEncrypt(chatData);
+
+    // Write the updated data to the file
+    await file.writeAsString(encryptedUpdatedData, flush: true);
   }
 
   Future<List<Map<String, dynamic>>> loadLocalDB() async {
-    final prefs = await SharedPreferences.getInstance();
+    final folder = await getExternalStorageDirectory();
 
-    final existingDataString = prefs.getString(userId) ?? '[]';
+    final myFlutterFolder = Directory('${folder!.path}/myflutter');
+    final file = File('${myFlutterFolder.path}/${userId}_chatdb.dat');
 
-    if (existingDataString.isEmpty) {
+    if (!await file.exists()) {
       return [];
     }
 
-    final chatData =
-        jsonDecode(existingDataString).cast<Map<String, dynamic>>();
+    final encryptedData = await file.readAsString();
+    final decryptedData = _decryptAndDeserialize(encryptedData);
 
-    return chatData;
+    return decryptedData;
   }
 }

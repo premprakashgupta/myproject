@@ -11,13 +11,6 @@ class ChattingUserLists extends StatefulWidget {
 
 class _ChattingUserListsState extends State<ChattingUserLists> {
   @override
-  void initState() {
-    // TODO: implement initState
-
-    super.initState();
-  }
-
-  @override
   void didChangeDependencies() {
     super.didChangeDependencies();
 

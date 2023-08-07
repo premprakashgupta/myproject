@@ -18,4 +18,9 @@ class UserProvider with ChangeNotifier {
 
     notifyListeners();
   }
+
+  void clear() {
+    print("user clear");
+    _user = null;
+  }
 }

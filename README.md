@@ -18,22 +18,22 @@ Dr AI is a telemedicine application that empowers users to connect with medical 
 
 
 ### Login Screen
-![Login Screen](./assets/screenshot/login_screen.png)
+![Login Screen](./assets/login_screen.png)
 
 ### Landing Screen
-![Landing Screen](./assets/screenshot/landing_screen.png)
+![Landing Screen](./assets/landing_screen.png)
 
 ### Chat with AI
-![Chat with AI](./assets/screenshot/chat_ai_screen.png)
+![Chat with AI](./assets/chat_ai_screen.png)
 
 ### Chat with Doctor
-![Chat with Doctor](./assets/screenshot/chat_doctor_screen.png)
+![Chat with Doctor](./assets/chat_doctor_screen.png)
 
 ### Profile Screen
-![Profile Screen](./assets/screenshot/profile_screen.png)
+![Profile Screen](./assets/profile_screen.png)
 
 ### Doctor List
-![Doctor List](./assets/screenshot/doctor_list_screen.png)
+![Doctor List](./assets/doctor_list_screen.png)
 
 
 ## Getting Started
